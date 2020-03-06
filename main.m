@@ -14,4 +14,14 @@ ds = ds';
 fclose(fileID);
 
 %%
-ds = dataset('file', 'FA/FA/ske4_FA_values.txt', 'Delimiter', ' ');
+
+figure
+i = 1;
+for ss = 1:n_sub
+       n_v = n_visits(n_sub);
+       data = ds(i:i+n_v-1, 1);
+       scatter(1:n_v, data')
+       hold on
+       i = i+ n_v;
+end
+
