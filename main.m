@@ -42,7 +42,8 @@ for tt = 1%:numel(types)
                hold on
                
                if fit_
-                   f = fit((days_v), data, 'exp1', 'Weights', data_sd);
+                   ft = fittype('a/(1+exp(-b*x))');
+                   f = fit((days_v), data, ft, 'Weights', data_sd);
                    y = feval(f, days_v(1):1:days_v(end));
                    hh(rr) = plot(days_v(1):1:days_v(end), y', 'Color', colors(ss, :));
                else
