@@ -8,17 +8,17 @@ load days.mat
 % regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
 regions = 1:48;
 colors = lines(n_sub);
-norm = true;
+norm = false;
 fit_ = false;
 log_ = true;
 e_bar = true;
 
-rep = false;
+rep = true;
 
 if rep
     import mlreportgen.report.*
     import mlreportgen.dom.*
-    rpt = Report('Per_region_raw','pdf');
+    rpt = Report('Per_region_raw_2','pdf');
     chap = Chapter('Raw data with standard deviation');
     add(rpt,chap);
     rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
@@ -31,22 +31,22 @@ if rep
 end
 
 for rr = 1:numel(regions)
-    
-    if rep
+
+    for tt = 1:numel(types)
+        clear ds
+%         subplot(1, n_sub, ss+(tt-1)*n_sub)
+%         subplot(1, 4, tt)
+
+        type = types{tt};
+         
+         i = 1;
+         if rep
         clf
     else
         figure('units','normalized','outerposition',[0 0 1 1])
     end
-    
-    for tt = 1:numel(types)
-        clear ds
-%         subplot(1, n_sub, ss+(tt-1)*n_sub)
-        subplot(1, 4, tt)
-        type = types{tt};
-         
-         i = 1;
         for ss = 1:n_sub
-            
+            subplot(3, 5, ss)
             n_v = n_visits(ss);
             days_v = days(:, ss);
             days_v = days_v(~isnan(days_v));
@@ -74,7 +74,7 @@ for rr = 1:numel(regions)
             end
             
             if e_bar
-                stdshade(cat(2, data_p, data_sd),0.2, colors(ss, :), days_v);
+                stdshade(cat(2, data, data_sd),0.2, colors(ss, :), days_v);
 %                 errorbar(days_v, data_p', data_sd, 'Vertical', '.',...
 %                     'MarkerSize',3, 'Color',colors(ss, :), 'MarkerFaceColor',colors(ss, :))
             else
@@ -101,36 +101,41 @@ for rr = 1:numel(regions)
                    y_p = y+d*(ss-1);
                    hh(ss) = plot(days_v(1):0.001:days_v(end), y', 'Color', colors(ss, :));
             else
-                   hh(ss) = plot(days_v, data_p', 'Color', colors(ss, :));
+                   hh(ss) = plot(days_v, data', 'Color', colors(ss, :));
             end
             hold on
           
-            label{ss} = ['Subject ' num2str(ss)];
+%             label{ss} = ['Subject ' num2str(ss)];
             i = i+ n_v;
-            
+            title(['S' num2str(ss)])
         end
         
-        title(type) 
-        ylim([0.8 d*20])
+        suptitle([type, ' Region ', num2str(regions(rr))]);
+         
+%         ylim([0.8 d*20])
 
-         if tt == 4
-            legend(hh, label, 'location', 'eastoutside')
-            legend boxoff
+%          if tt == 4
+%             legend(hh, label, 'location', 'eastoutside')
+%             legend boxoff
+%         end
+    
+        if rep
+            fig = Figure(gcf);
+            fig.Width = '8in';
+            fig.Height = '5in';
+            fig.Scaling = 'custom';
+            add(rpt, fig);
         end
+    
     end
     
 %     subplot(1, numel(types)+1, numel(types)+1)
    
     
-    suptitle(['Region ', num2str(regions(rr))]);
+%     suptitle(['Region ', num2str(regions(rr))]);
     
-    if rep
-        fig = Figure(gcf);
-        fig.Width = '11.5in';
-        fig.Height = '5in';
-        fig.Scaling = 'custom';
-        add(rpt, fig);
-    end
+    
+    
     
 end
 
