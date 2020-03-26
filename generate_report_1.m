@@ -1,15 +1,17 @@
 %% Whole brain
 
-types = {'AD', 'FA', 'MD', 'RD'};
-
+types = {'AD', 'FA', 'MD', 'RD', 'Behavioral'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];
 n_sub = length(n_visits);
 load days.mat
-days(2, :) = -2;
+load b_data.mat
+% days(2, :) = -2;
 regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
 colors = lines(n_sub);
-rep = true;
+rep = false;
+log_ = true;
 
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Raw DATA
 
@@ -19,7 +21,7 @@ fit_ = false;
 if rep
     import mlreportgen.report.*
     import mlreportgen.dom.*
-    rpt = Report('Whole_brain','pdf');
+    rpt = Report('Whole_brain_w_behavioral','pdf');
     chap = Chapter('Raw data');
     add(rpt,chap);
     rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
@@ -62,7 +64,7 @@ for tt = 1:numel(types)
                hold on
                
                if fit_
-                   ft = fittype('a/(1+exp(-b*x))');
+                   ft = fittype('(a-c)/(1+exp(-b*(x-d)))+c');
 %                    f = fit((days_v), data, ft, 'Weights', data_sd,...
 %                        'Upper', [Inf, 0, Inf Inf]);
                    f = fit((days_v), data, ft, 'Weights', data_sd);
@@ -103,6 +105,7 @@ for tt = 1:numel(types)
     end
 end
 
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Normalized DATA
 if 1
@@ -191,6 +194,8 @@ for tt = 1:numel(types)
     end
 end
 end
+
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fitted DATA
 

@@ -1,9 +1,13 @@
 %% Dataset for PCA
 
-types = {'AD', 'FA', 'MD', 'RD'};
+types = {'AD', 'FA', 'MD', 'RD', 'B'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];
 n_sub = length(n_visits);
-regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
+load days.mat
+load b_data.mat
+days(2, :) = -2;
+% regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
+regions = 1:48;
 colors = lines(numel(regions));
 norm = true;
 fit_ = true;
@@ -15,7 +19,10 @@ k = 1;
 
 for ss = 1:n_sub
     n_v = n_visits(ss);
-    
+    days_v = days(:, ss);
+    days_v = days_v(~isnan(days_v));
+    days_v = days_v(2:end, :);
+               
     for tt = 1:numel(types)
         clear ds
         type = types{tt};
@@ -28,16 +35,18 @@ for ss = 1:n_sub
             ds = ds';
             fclose(fileID);
             
-            data = ds(i:i+n_v-1, 1);
-            data_sd = ds(i:i+n_v-1, 2);
-            norm_param = data(1);
+            data = ds(i+1:i+n_v-1, 1);
+            data_sd = ds(i+1:i+n_v-1, 2);
+            norm_param = data(2);
             
             if norm
                 data = (data-norm_param)./norm_param; 
             end
             
             if fit_
-                f = fit((1:n_v)', data, 'exp1', 'Weights', data_sd);
+                ft = fittype('(a-c)/(1+exp(-b*(x-d)))+c');
+                f = fit(days_v, data, ft, 'Weights', data_sd,...
+                    'Lower', [-Inf 0]);
                 y = coeffvalues(f);
                 dt.([type '_' num2str(regions(rr)), '_a'])(ss, 1) = y(1);
                 dt.([type '_' num2str(regions(rr)), '_b'])(ss, 1) = y(2);
@@ -62,7 +71,7 @@ var_ind = var_ind(1:length(vars), :);
 D = cell2mat(D(2:end, :));
 % [coeff,score,latent,tsquared,explained,mu] = pca(D);
 [rho,pval] = corr(D);
-sig_p = (pval < 0.05) & (abs(rho) > 0.85);
+sig_p = (pval < 0.05) & (abs(rho) > 0.90);
 sig_p = tril(sig_p);
 
 [i, j] = ind2sub(size(sig_p), find(sig_p));
@@ -73,12 +82,16 @@ sig_p = tril(sig_p);
 figure,
 fit_vars = {'a', 'b'};
 for pp = 1:length(i)
-    subplot(4, 6, pp)
+    subplot(5, 6, pp)
+    axis square
     x = D_mat(:, var_ind(i(pp), 1),var_ind(i(pp), 2), var_ind(i(pp), 3));
     y = D_mat(:, var_ind(j(pp), 1),var_ind(j(pp), 2), var_ind(j(pp), 3));
-    scatter(x, y)
+    scatter(x, y, 5, 'k', 'filled')
     xlabel([types{var_ind(i(pp), 1)}, ' ', num2str(regions(var_ind(i(pp), 2))), ' ', fit_vars{ var_ind(i(pp), 3)}])
     ylabel([types{var_ind(j(pp), 1)}, ' ', num2str(regions(var_ind(j(pp), 2))), ' ', fit_vars{ var_ind(j(pp), 3)}])
+    
+    title(['R = ', num2str(rho(i(pp), j(pp)))]);
+    
 end
 
 
