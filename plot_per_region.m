@@ -16,13 +16,13 @@ log_ = true;            % No. of days in log, true or false
 e_bar = true;           % Error bar, true or false
 
 rep = true;             % Generate pdf report true or false
-rep_name = 'Per_subject_norm_mean';
+rep_name = 'Per_subject_znorm_median';
 
 if rep
     import mlreportgen.report.*
     import mlreportgen.dom.*
     rpt = Report(rep_name,'pdf');
-    chap = Chapter('Raw data with standard deviation');
+    chap = Chapter('Median normalized data');
     add(rpt,chap);
     rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
     rpt.Document.CurrentPageLayout.PageMargins.Right = '0.5in';
@@ -81,9 +81,12 @@ for rr = 1:numel(regions)
             
             d = 0.2;
             if norm
-                data = (data)./norm_param; 
+%                 data = (data)./norm_param; 
+%                 data_p = data+d*(ss-1);
+%                 data_sd = data_sd./norm_param;
+                
+                data = zscore(data);
                 data_p = data+d*(ss-1);
-                data_sd = data_sd./norm_param;
             end
             
             if ~mean_per_subj
@@ -146,8 +149,8 @@ for rr = 1:numel(regions)
             n_u = ones(size(days_all_u)).*NaN;
             
             for uu = 1:length(days_all_u)
-                data_all_u(uu) = mean(data_all(ic == uu));
-                data_sd_u(uu) = std(data_all(ic == uu));
+                data_all_u(uu) = median(data_all(ic == uu));
+                data_sd_u(uu) = iqr(data_all(ic == uu));
                 n_u(uu) = length(find(ic == uu));
             end
             
@@ -165,7 +168,7 @@ for rr = 1:numel(regions)
             set(gca, 'XTick', xticks_l);
             set(gca', 'XTickLabel', num2str(xticks'));
             xlabel('Scanning days')
-            ylabel('Mean normalized data (error region: sd)')
+            ylabel('Median z-score normalized data (error region: iqr)')
             grid on
         end
         
