@@ -11,11 +11,11 @@ colors = lines(n_sub);
 
 mean_per_subj = true;   % Mean of all subjects per region
 norm = true;           % Normalize data, true or false
-fit_ = false;           % Fit data, true or false
+fit_ = true;           % Fit data, true or false
 log_ = true;            % No. of days in log, true or false
 e_bar = true;           % Error bar, true or false
 
-rep = true;             % Generate pdf report true or false
+rep = false;             % Generate pdf report true or false
 rep_name = 'Per_subject_znorm_median_wm_volume';
 
 if rep
@@ -33,7 +33,7 @@ if rep
 %     figure('units','normalized','outerposition',[0.1 0 0.9 1])
 end
 
-for rr = 1:numel(regions)
+for rr = 1%:numel(regions)
 
     for tt = 1:numel(types)
         clear ds
@@ -47,7 +47,7 @@ for rr = 1:numel(regions)
             clf
         else
 %             figure('units','normalized','outerposition',[0 0 1 1])
-            clf
+            figure
         end
         
         if mean_per_subj
@@ -167,6 +167,27 @@ for rr = 1:numel(regions)
                 errorbar(days_all_u, data_all_u, data_sd_u);
             end
             
+            if fit_
+                ft = '(p*(a1*exp(-((x-b1)/c1)^2)+d1)) + ((1-p)*(a2*exp(-((x-b2)/c2)^2)+d2))';
+                [~, ind] = max(abs(data_all_u - mean(data_all_u)));
+                if data_all_u(ind) < 1
+                    st_pts = [-0.5, -0.5, 1.1, 2.1, 0.1, 0.5, 0.5, 1, 0.5];
+                else
+                    st_pts = [0.5, 0.5, 1.1, 2.1, 0.1, 0.5, 0.5, 1, 0.5];
+                end
+
+                f = fit(days_all_u, data_all_u, ft,...
+                    'StartPoint', st_pts);
+
+%                    f = fit(days_v, data, 'gauss2', 'Weights', data_sd);
+                   y = feval(f, days_all_u(1):0.001:days_all_u(end));
+                   y_p = y+d*(ss-1);
+                   hh(ss) = plot(days_all_u(1):0.001:days_all_u(end), y',... 
+                       'LineStyle', '--', 'Color', [0.5, 0.5, 0.5]);
+
+             end
+                        
+             
 %             xticks = [-5 0 10 30 60 100 200];
             xticks_l = (linspace(days_all_u(1), days_all_u(end), 10));
             xticks = round(10.^(xticks_l)-10);
