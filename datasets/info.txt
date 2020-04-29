@@ -1,0 +1,11 @@
+ASEG: 191 region, grey matter volume + white matter volume + CS fluid
+		variable: meanDif (without mask), meanFADifValue (with mask) both
+	
+		
+WMV: white matter volume, 
+		varibale: meanDif (without mask), meanFADifValue (with mask) both
+
+DTI: 48 regions
+		variabel: skel value only, white matter track, no mask
+		
+		
