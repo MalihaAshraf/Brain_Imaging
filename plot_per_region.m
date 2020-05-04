@@ -8,32 +8,63 @@ load days.mat                       % Day number for each visit for each partici
 % regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
 regions = 1:48;
 colors = lines(n_sub);
+data_folder = 'datasets/DTI/';
 
-mean_per_subj = true;   % Mean of all subjects per region
+mean_all_subj = false;   % Mean of all subjects per region
+ind_sub_plot = false;   % subplot for individual subjects
 norm = true;           % Normalize data, true or false
 fit_ = true;           % Fit data, true or false
 log_ = true;            % No. of days in log, true or false
-e_bar = true;           % Error bar, true or false
+e_bar = false;           % Error bar, true or false
 
-rep = false;             % Generate pdf report true or false
-rep_name = 'Per_subject_znorm_median';
+rep = true;             % Generate pdf report true or false
+rep_name = 'figs/DTI_analysis_may_4th_20';
+
+doc_ = true;
+doc_name = 'tables/DTI_stats.xlsx';
 
 if rep
     import mlreportgen.report.*
     import mlreportgen.dom.*
     rpt = Report(rep_name,'pdf');
-    chap = Chapter('Median normalized data');
+    chap = Chapter('Linear fitting per subject');
     add(rpt,chap);
     rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
     rpt.Document.CurrentPageLayout.PageMargins.Right = '0.5in';
 end
 
 if rep
-    figure
+   h=figure('visible','off');
+%     set(h,'visible','off');
+%     figure_handle = h;
+%     figure_handle.WindowState = 'minimized';
+    h.PaperUnits = 'inches';
+    h.PaperSize = [7.5 4.5];
+%     h.Width = '8in';
+%     h.Height = '5in';
+%     h.Scaling = 'custom';
+
 %     figure('units','normalized','outerposition',[0.1 0 0.9 1])
 end
 
-for rr = 1%:numel(regions)
+table_vars = [["Regions", "int16"];...
+    ["Diff_type", "string"];...
+    ["Subject", "int16"];...
+    ["n", "int16"];...
+    ["RMSE", "double"];...
+    ["R_squared", "double"];...
+    ["Adj_R_squared", "double"];...
+    ["F-statistic", "double"];...
+    ["p-value", "double"];...
+    ["intercept", "double"];...
+    ["slope", "double"]];
+
+T = table('Size',[numel(regions)*numel(types)*n_sub,size(table_vars,1)],... 
+	'VariableNames', table_vars(:,1),...
+	'VariableTypes', table_vars(:,2));
+j = 1;
+
+for rr = 1:numel(regions)
 
     for tt = 1:numel(types)
         clear ds
@@ -44,88 +75,92 @@ for rr = 1%:numel(regions)
          
          i = 1;
         if rep
-            clf
+%             set(0, 'CurrentFigure', figure_handle);
+            clf(h)
         else
 %             figure('units','normalized','outerposition',[0 0 1 1])
             figure
         end
         
-        if mean_per_subj
+        if mean_all_subj
            days_all = [];
            data_all = []; 
         end
         
         for ss = 1:n_sub
-            if ~mean_per_subj
+            if (~mean_all_subj) && (ind_sub_plot)
                 subplot(3, 5, ss);
             end
             
             n_v = n_visits(ss);
             days_v = days(:, ss);
             days_v = days_v(~isnan(days_v));
-            days_v = days_v(2:end, :);
+            days_v(days_v < -1) = -1;
+%             days_v = days_v(2:end, :);
+            d_l = 2;    % adjustment factor for log values
             if log_
-                days_v = log10(days_v+10);
+                days_v = log10(days_v+d_l);
             end
+            days_max = log10(200+d_l);
+            days_min = log10(-2+d_l);
     
-            fileID = fopen([type '/' type '/ske', num2str(regions(rr)) '_' type '_values.txt'], 'r');
+            fileID = fopen([data_folder, type '/' type '/ske', num2str(regions(rr)) '_' type '_values.txt'], 'r');
             formatSpec = '%f %f %f %f';
             sz = [4 Inf];
             ds = fscanf(fileID, formatSpec, sz);
             ds = ds';
             fclose(fileID);
             
-            data = ds(i+1:i+n_v-1, 1);
-            data_sd = ds(i+1:i+n_v-1, 2);
+            data = ds(i:i+n_v-1, 1);
+            data_sd = ds(i:i+n_v-1, 2);
             norm_param = mean(data);
             
             d = 0.2;
             if norm
-%                 data = (data)./norm_param; 
-%                 data_p = data+d*(ss-1);
-%                 data_sd = data_sd./norm_param;
-                
-                data = zscore(data);
+                data = (data - norm_param)./norm_param; 
                 data_p = data+d*(ss-1);
+                data_sd = data_sd./norm_param;
             end
             
-            if ~mean_per_subj
+            if ~mean_all_subj
                 if e_bar
                     stdshade(cat(2, data, data_sd),0.2, colors(ss, :), days_v);
-    %                 errorbar(days_v, data_p', data_sd, 'Vertical', '.',...
-    %                     'MarkerSize',3, 'Color',colors(ss, :), 'MarkerFaceColor',colors(ss, :))
                 else
-                    scatter(days_v, data_p', 5, colors(ss, :), 'filled');    
+                    scatter(days_v, data', 5, colors(ss, :), 'filled');    
                 end
                 hold on
                 
                 if fit_
-    %                 ft = '(p*a1*exp(-((x-b1)/c1)^2)+d1) + ((1-p)*a2*exp(-((x-b2)/c2)^2)+d2)';
-                    ft = '(p*(a1*exp(-((x-b1)/c1)^2)+d1)) + ((1-p)*(a2*exp(-((x-b2)/c2)^2)+d2))';
-                    [~, ind] = max(abs(data - mean(data)));
-                    if data(ind) < 1
-                        st_pts = [-0.5, -0.5, 1.1, 2.1, 0.1, 0.5, 0.5, 1, 0.5];
-                    else
-                        st_pts = [0.5, 0.5, 1.1, 2.1, 0.1, 0.5, 0.5, 1, 0.5];
-                    end
-    %                 f = fit(days_v, data, ft);
 
-                    f = fit(days_v, data, ft,...
-                        'StartPoint', st_pts);
-
+                    mdl = fitlm(days_v, data, 'Weights', data_sd);
+                    [p,F] = coefTest(mdl);
+                    T(j, :) = {rr, type, ss, mdl.NumObservations,...
+                        mdl.RMSE, mdl.Rsquared.Ordinary, mdl.Rsquared.Adjusted,...
+                        F, p, mdl.Coefficients.Estimate(1), mdl.Coefficients.Estimate(2)};
+                    
     %                    f = fit(days_v, data, 'gauss2', 'Weights', data_sd);
-                       y = feval(f, days_v(1):0.001:days_v(end));
-                       y_p = y+d*(ss-1);
-                       hh(ss) = plot(days_v(1):0.001:days_v(end), y', 'Color', colors(ss, :));
+%                        y = feval(f, days_v(1):0.001:days_v(end));
+%                        y_p = y+d*(ss-1);
+                       plot(days_v, mdl.Fitted, 'Color', colors(ss, :), 'LineStyle', '--');
                 else
                        hh(ss) = plot(days_v, data', 'Color', colors(ss, :));
                 end
-                hold on
+%                 hold on
 
     %             label{ss} = ['Subject ' num2str(ss)];
                 i = i+ n_v;
-                title(['S' num2str(ss)])
-
+                j = j+1;
+                
+                if ind_sub_plot
+                    title(['S' num2str(ss)])
+                    xticks_l = (linspace(days_v(1), days_v(end), 4));
+                    xticks = round(10.^(xticks_l)-d_l);
+                    set(gca, 'XTick', xticks_l);
+                    set(gca', 'XTickLabel', num2str(xticks'));
+                    grid on
+                end
+                
+               
             else
                 hh(ss) = scatter(days_v, data', 5, colors(ss, :), 'filled');  
                 hold on
@@ -142,7 +177,7 @@ for rr = 1%:numel(regions)
             end  
         end
         
-        if mean_per_subj
+        if mean_all_subj
             [days_all_u,ia,ic] = unique(days_all);
             data_all_u = ones(size(days_all_u)).*NaN;
             data_sd_u = ones(size(days_all_u)).*NaN;
@@ -190,23 +225,27 @@ for rr = 1%:numel(regions)
             xlabel('Scanning days')
             ylabel('Median z-score normalized data (error region: iqr)')
             grid on
+        else
+             if ~ind_sub_plot
+                    xlim([days_min days_max]);
+                    xticks_l = (linspace(0, days_max, 10));
+                    xticks = round(10.^(xticks_l)-d_l);
+                    set(gca, 'XTick', xticks_l);
+                    set(gca', 'XTickLabel', num2str(xticks'));
+                    xlabel('Scanning days')
+                    ylabel('Mean diffusivity')
+                    grid on
+             end
         end
         
         suptitle([type, ' Region ', num2str(regions(rr))]);
-         
-%         ylim([0.8 d*20])
-
-%          if tt == 4
-%             legend(hh, label, 'location', 'eastoutside')
-%             legend boxoff
-%         end
     
         if rep
-            fig = Figure(gcf);
-            fig.Width = '8in';
-            fig.Height = '5in';
-            fig.Scaling = 'custom';
-            add(rpt, fig);
+%             fig = Figure(h);
+%             fig.Width = '8in';
+%             fig.Height = '5in';
+%             fig.Scaling = 'custom';
+            add(rpt, Figure(h));
         end
     
     end
@@ -218,4 +257,8 @@ end
 
 if rep
     close(rpt);
+end
+
+if doc_
+   writetable(T,doc_name) 
 end
