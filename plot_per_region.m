@@ -17,7 +17,7 @@ log_ = true;            % No. of days in log, true or false
 e_bar = false;           % Error bar, true or false
 
 rep = true;             % Generate pdf report true or false
-rep_name = 'figs/DTI_analysis_may_10th_20';
+rep_name = 'figs/DTI_analysis_may_17th_20';
 
 doc_ = true;
 doc_name = 'tables/DTI_stats.xlsx';
@@ -130,7 +130,7 @@ for rr = 1:numel(regions)
             
             d = 0.2;
             if norm
-                data = (data - norm_param)./norm_param; 
+                data = (data)./norm_param; 
                 data_p = data+d*(ss-1);
                 data_sd = data_sd./norm_param;
             end

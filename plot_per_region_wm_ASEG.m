@@ -1,4 +1,4 @@
-%% ASEG 
+ %% ASEG 
 
 types = {'AD', 'FA', 'MD', 'RD'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];    % No of visits for each subject
@@ -19,11 +19,11 @@ e_bar = false;           % Error bar, true or false
 ind_sub_plot = false;
 
 rep = true;             % Generate pdf report true or false
-rep_name = 'figs/ASEG_FAMask_may_16th_20'; 
+rep_name = 'figs/ASEG_noMask_may_17th_20'; 
 
 doc_ = true;
-doc_name = 'tables/ASEG_FAMask_stats.xlsx';
-doc2_name = 'tables/ASEG_FAMask_stats_all.xlsx';
+doc_name = 'tables/ASEG_noMask_stats.xlsx';
+doc2_name = 'tables/ASEG_noMask_stats_all.xlsx';
 
 if rep
     import mlreportgen.report.*
@@ -116,7 +116,7 @@ for rr = 1:numel(regions)
 			
             load ([data_folder, 'ASEG/', types{tt}, '/S', num2str(ss, '%d'), '_', types{tt}, '.mat']);
             
-            if 1%tt == 2
+            if 0%tt == 2
                 data = meanFADifValue(rr, 1:length(days_v))';
                 if ~sum(data)
                     continue
@@ -132,7 +132,7 @@ for rr = 1:numel(regions)
 			norm_param = mean(data);
             d = 0.2;
             if norm                
-                data = (data - norm_param)./norm_param; 
+                data = (data)./norm_param; 
                 data_p = data+d*(ss-1);
             end
             

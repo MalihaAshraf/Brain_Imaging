@@ -20,11 +20,11 @@ ind_sub_plot = false;
 labels = readtable('WMV_label_list.xlsx');
 
 rep = true;             % Generate pdf report true or false
-rep_name = 'figs/WMV_FAMask_may_16th_20';
+rep_name = 'figs/WMV_noMask_may_17th_20';
 
 doc_ = true;
-doc_name = 'tables/WMV_FAMask_stats.xlsx';
-doc2_name = 'tables/WMV_FAMask_stats_all.xlsx';
+doc_name = 'tables/WMV_noMask_stats.xlsx';
+doc2_name = 'tables/WMV_noMask_stats_all.xlsx';
 
 if rep
     import mlreportgen.report.*
@@ -119,7 +119,7 @@ for rr = 1:numel(regions)
 			
             load ([data_folder, 'WMV/', types{tt}, '/S', num2str(ss, '%d'), '_', types{tt}, '.mat']);
             
-            if 1%tt == 2
+            if 0%tt == 2
                 data = meanFADifValue(rr, 1:length(days_v))';
                 if ~sum(data)
                     continue
@@ -132,7 +132,7 @@ for rr = 1:numel(regions)
 		   norm_param = mean(data);
             d = 0.2;
             if norm                
-                data = (data - norm_param)./norm_param; 
+                data = (data)./norm_param; 
                 data_p = data+d*(ss-1);
 %                 data_sd = data_sd./norm_param;
             end
