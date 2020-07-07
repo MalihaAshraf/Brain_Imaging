@@ -1,7 +1,9 @@
  %% ASEG 
 
  close all
- 
+
+d_s = 'CC';
+
 types = {'AD', 'FA', 'MD', 'RD'};
 types = {'FA', 'MD'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];    % No of visits for each subject
@@ -9,11 +11,21 @@ n_sub = length(n_visits);
 load days2.mat                       % Day number for each visit for each participant
 % days(2, :) = -2;
 % regions = [ 4 5 6 23 24 25 26 27 28 29 42 43 44 45];
-regions = [37, 38, 39, 40, 41];
 % regions = [8, 13, 14, 27, 28, 29, 30, 31];
 colors = lines(n_sub);
-data_folder = 'datasets/ASEG/';
-labels = readtable('ASEG_label_list.xlsx');
+
+switch d_s
+    case 'ASEG'
+        data_folder = 'datasets/ASEG/';
+        labels = readtable('ASEG_label_list.xlsx');
+        regions = [37, 38, 39, 40, 41];
+
+    case 'CC'
+        data_folder = 'datasets_old/CC_DTIdata/';
+        regions = 1:5;
+end
+
+mask_label = {' (No mask)', ' (FA mask)'};
 
 mean_per_subj = false;   % Mean of all subjects per region
 norm = true;           % Normalize data, true or false
@@ -23,9 +35,9 @@ e_bar = false;           % Error bar, true or false
 ind_sub_plot = true;
 
 rep = true;             % Generate pdf report true or false
-rep_name = ['figs/ASEG_fits_20_07_07']; 
+rep_name = ['figs/', d_s, '_fits_20_07_07']; 
 
-mask_label = {' (No mask)', ' (FA mask)'};
+
 % doc_ = true;
 % doc_name = 'tables/ASEG_noMask_stats.xlsx';
 % doc2_name = 'tables/ASEG_noMask_stats_all.xlsx';
@@ -51,16 +63,22 @@ k = 1;
 for ff = 1:2
 for tt = 1:numel(types)
 	type = types{tt};
+    
+    if rep
+        chap = Chapter([types{tt}, mask_label{ff}]);
+        add(rpt,chap);
+        rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
+        rpt.Document.CurrentPageLayout.PageMargins.Right = '0.5in';
+    end
+        
     for rr = 1:numel(regions)
         clear ds
         
-        r_label =  labels.labelName{regions(rr)};
-           
+        if strcmp(d_s, 'ASEG')
+            r_label =  labels.labelName{regions(rr)};
+        end
+        
         if rep
-            chap = Chapter([types{tt}, mask_label{ff}]);
-            add(rpt,chap);
-            rpt.Document.CurrentPageLayout.PageMargins.Left = '0.5in';
-            rpt.Document.CurrentPageLayout.PageMargins.Right = '0.5in';
             clf(h)
         else
 %             figure('units','normalized','outerposition',[0 0 1 1])
@@ -89,20 +107,32 @@ for tt = 1:numel(types)
             days_max = log10(200+d_l);
             days_min = log10(-2+d_l);
 			
-            load ([data_folder, 'ASEG/', types{tt}, '/S', num2str(ss, '%d'), '_', types{tt}, '.mat']);
-            
+            switch d_s
+                case 'ASEG'            
+                    load ([data_folder, 'ASEG/', types{tt}, '/S', num2str(ss, '%d'), '_', types{tt}, '.mat']);
+                case 'CC'
+                    load ([data_folder, 'CC_', types{tt}, 'files/S', num2str(ss, '%.2d'), types{tt}, '_CC.mat']);
+            end
             if ff == 2%tt == 2
                 data = meanFADifValue(regions(rr), 1:length(days_v))';
                 if ~sum(data)
                     continue
                 end
-                data_sd = stdFADifValue(regions(rr), 1:length(days_v));
+                if strcmp(d_s, 'CC')
+                    data_sd = [];
+                else
+                    data_sd = stdFADifValue(regions(rr), 1:length(days_v));
+                end 
             else
                 data = meanDifValue(regions(rr), 1:length(days_v))';
                 if ~sum(data)
                     continue
                 end
-                data_sd = stdDifValue(regions(rr), 1:length(days_v));
+                if strcmp(d_s, 'CC')
+                    data_sd = [];
+                else
+                    data_sd = stdDifValue(regions(rr), 1:length(days_v));
+                end 
             end
            
             if 0
@@ -191,7 +221,7 @@ for tt = 1:numel(types)
             
             if ind_sub_plot
 %             xticks = [-5 0 10 30 60 100 200];
-                xticks_l = (linspace(days_all_u(1), days_all_u(end), 5));
+                xticks_l = (linspace(days_v(1), days_v(end), 5));
                 xticks = round(10.^(xticks_l)-d_l);
                 set(gca, 'XTick', xticks_l);
                 set(gca', 'XTickLabel', num2str(xticks'));
@@ -249,8 +279,12 @@ for tt = 1:numel(types)
              end
 %         end
         
-        suptitle([type, ' Region ', num2str(regions(rr)), ' ', labels.labelName{regions(rr)}]);
-         
+        if strcmp(d_s, 'CC')
+            suptitle([type, ' Region CC ', num2str(regions(rr))]);
+        else
+            suptitle([type, ' Region ', num2str(regions(rr)), ' ', labels.labelName{regions(rr)}]);
+        end
+        
 %         ylim([0.8 d*20])
 
 %          if tt == 4
