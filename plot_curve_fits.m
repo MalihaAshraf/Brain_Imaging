@@ -5,7 +5,7 @@
 d_s = 'CC';
 
 types = {'AD', 'FA', 'MD', 'RD'};
-types = {'FA', 'MD'};
+types = {'FA'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];    % No of visits for each subject
 n_sub = length(n_visits);
 load days2.mat                       % Day number for each visit for each participant
@@ -27,15 +27,15 @@ end
 
 mask_label = {' (No mask)', ' (FA mask)'};
 
-mean_per_subj = false;   % Mean of all subjects per region
+mean_per_subj = true;   % Mean of all subjects per region
 norm = true;           % Normalize data, true or false
-fit_ = true;           % Fit data, true or false
+fit_ = false;           % Fit data, true or false
 log_ = true;            % No. of days in log, true or false
 e_bar = false;           % Error bar, true or false
-ind_sub_plot = true;
+ind_sub_plot = false;
 
-rep = true;             % Generate pdf report true or false
-rep_name = ['figs/', d_s, '_fits_20_07_07']; 
+rep = false;             % Generate pdf report true or false
+rep_name = ['figs/', d_s, '_fits_', date]; 
 
 
 % doc_ = true;
@@ -60,7 +60,7 @@ end
 j = 1;
 k = 1;
 
-for ff = 1:2
+for ff = 1%:2
 for tt = 1:numel(types)
 	type = types{tt};
     
@@ -99,13 +99,13 @@ for tt = 1:numel(types)
             days_v = days_v(~isnan(days_v));
 %            sel = (days_v >= 0);% & (days_v < 120);
 %             days_v = days_v(3:end, :);
-            days_v(days_v < -1) = -1;
-            d_l = 2;    % adjustment factor for log values
+            days_v(days_v < 0) = 0;
+            d_l = 1;    % adjustment factor for log values
             if log_
-                days_v = log10(days_v+d_l);
+                days_v = log2(days_v+d_l);
             end
-            days_max = log10(200+d_l);
-            days_min = log10(-2+d_l);
+            days_max = log2(200+d_l);
+            days_min = log2(-2+d_l);
 			
             switch d_s
                 case 'ASEG'            
@@ -151,7 +151,7 @@ for tt = 1:numel(types)
             
             
             [y_out, mean_y, sign_y, peak_y, min_y] = process_y_bigauss(data);
-%             if ~mean_per_subj
+            if ~mean_per_subj
                 if e_bar
 %                     stdshade(cat(2, data, data_sd),0.2, colors(ss, :), days_v);
                     errorbar(days_v, data_p', data_sd, 'Vertical', '.',...
@@ -204,7 +204,7 @@ for tt = 1:numel(types)
     %             label{ss} = ['Subject ' num2str(ss)];
     %            title(['S' num2str(ss)])
 
-%             else
+            else
             %    hh(ss) = scatter(days_v, data', 5, colors(ss, :), 'filled');  
                 hold on
                 if ss == 1
@@ -217,12 +217,12 @@ for tt = 1:numel(types)
                     data_all = data_all(ind);
                     clear ind
                 end
-%             end  
+            end  
             
             if ind_sub_plot
 %             xticks = [-5 0 10 30 60 100 200];
                 xticks_l = (linspace(days_v(1), days_v(end), 5));
-                xticks = round(10.^(xticks_l)-d_l);
+                xticks = round(2.^(xticks_l)-d_l);
                 set(gca, 'XTick', xticks_l);
                 set(gca', 'XTickLabel', num2str(xticks'));
                 if ss == 13
@@ -236,7 +236,7 @@ for tt = 1:numel(types)
              end
         end
         
-%         if mean_per_subj
+        if mean_per_subj
             [days_all_u,ia,ic] = unique(days_all);
             data_all_u = ones(size(days_all_u)).*NaN;
             data_sd_u = ones(size(days_all_u)).*NaN;
@@ -264,20 +264,20 @@ for tt = 1:numel(types)
                  %      ['rmse: ', num2str(gof.rmse)]);
 
             else
-%                 scatter(days_all_u, data_all_u, 20, 'k', 'filled')
+                scatter(days_all, data_all, 20, 'k', 'filled')
             end
                         
              if ~ind_sub_plot
 %             xticks = [-5 0 10 30 60 100 200];
             xticks_l = (linspace(days_all_u(1), days_all_u(end), 10));
-            xticks = round(10.^(xticks_l)-d_l);
+            xticks = round(2.^(xticks_l)-d_l);
             set(gca, 'XTick', xticks_l);
             set(gca', 'XTickLabel', num2str(xticks'));
             xlabel('Scanning days')
             ylabel('Mean diffusivity')
             grid on
              end
-%         end
+        end
         
         if strcmp(d_s, 'CC')
             suptitle([type, ' Region CC ', num2str(regions(rr))]);
