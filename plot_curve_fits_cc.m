@@ -2,7 +2,7 @@
 
  close all
 
-files = dir('datasets/WMV_headphones/*.xlsx');
+files = dir('datasets/short_list_15_Aug_2020/*.xlsx');
 % types = {'MD'};
 
 rep = true;             % Generate pdf report true or false
@@ -11,6 +11,7 @@ m_w = true;             % motion weight
 
 for dd = 1:length(files)
 
+close all
 data_table = readtable(fullfile(files(dd).folder, files(dd).name));
 [~, d_s, ~] =  fileparts(fullfile(files(dd).name));
 folder = files(dd).folder;
@@ -144,17 +145,20 @@ k = 1;
             n_u = ones(size(days_all_u)).*NaN;
             
             for uu = 1:length(days_all_u)
-                data_all_u(uu) = sum(data_all(ic == uu).*w_all(ic == uu))/sum(w_all(ic==uu));
-                data_sd_u(uu) = std(data_all(ic == uu))./sqrt(length(data_all(ic == uu)));
+                [data_all_u(uu), data_sd_u(uu), ~, ~] = weighted_mean_std(data_all(ic == uu), w_all(ic == uu));
                 n_u(uu) = length(find(ic == uu));
             end
             
             if doc
                 if rr ==1
                     bin_data(1:length(data_all_u),1) = array2table(days_all_u);
+                    bin_data(length(data_all_u)+1:length(data_all_u)*2,1) = array2table(days_all_u);
+                    
                     bin_data(1:length(data_all_u),rr+1) = array2table(data_all_u);
+                    bin_data(length(data_all_u)+1:length(data_all_u)*2,rr+1) = array2table(data_sd_u);
                 else 
                     bin_data(1:length(data_all_u),rr+1) = array2table(data_all_u);
+                    bin_data(length(data_all_u)+1:length(data_all_u)*2,rr+1) = array2table(data_sd_u);
                 end
             end
             
@@ -172,7 +176,7 @@ k = 1;
                     y = ((y+min_y).*sign_y)+mean_y;
                     plot(days_f, y', 'Color', 'r', 'LineStyle', '--');
                     hold on
-                    errorbar(days_all_u, data_all_u, data_sd_u, 'Vertical', '-',...
+                    errorbar(days_all_u, data_all_u, data_sd_u./2, 'Vertical', '-',...
                         'MarkerSize',5, 'Color', 'k', 'MarkerFaceColor', 'k')
            
             else
