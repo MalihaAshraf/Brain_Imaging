@@ -53,3 +53,10 @@ AD tends to be variable in WM changes and pathology. In axonal injury AD decreas
 RD= (λ2+λ3)/2 
 
 RD increases in WM with de- or dys-myelination. Changes in the axonal diameters or density may also influence R
+
+
+%%
+
+48 regions = White matter tract
+68 regions = White matter volume
+191 regions = Whole brain

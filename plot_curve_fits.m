@@ -2,10 +2,10 @@
 
  close all
 
-d_s = 'CC';
+d_s = 'ASEG';
 
-types = {'AD', 'FA', 'MD', 'RD'};
-types = {'FA'};
+types = {'FA', 'MD', 'RD', 'AD'};
+% types = {'FA'};
 n_visits  =  [16 14 14 13 12 13 13 14 13 13 13 11 12 11 10];    % No of visits for each subject
 n_sub = length(n_visits);
 load days2.mat                       % Day number for each visit for each participant
@@ -29,12 +29,12 @@ mask_label = {' (No mask)', ' (FA mask)'};
 
 mean_per_subj = true;   % Mean of all subjects per region
 norm = true;           % Normalize data, true or false
-fit_ = false;           % Fit data, true or false
+fit_ = true;           % Fit data, true or false
 log_ = true;            % No. of days in log, true or false
 e_bar = false;           % Error bar, true or false
 ind_sub_plot = false;
 
-rep = false;             % Generate pdf report true or false
+rep = true;             % Generate pdf report true or false
 rep_name = ['figs/', d_s, '_fits_', date]; 
 
 
@@ -60,7 +60,7 @@ end
 j = 1;
 k = 1;
 
-for ff = 1%:2
+for ff = 1:2
 for tt = 1:numel(types)
 	type = types{tt};
     
@@ -141,7 +141,7 @@ for tt = 1:numel(types)
                data_sd = data_sd(1:10);
             end
             
-			norm_param = mean(data(days_v == 0 ));
+			norm_param = mean(data);
             d = 0;
             if norm                
                 data = (data)./norm_param; 
@@ -237,18 +237,19 @@ for tt = 1:numel(types)
         end
         
         if mean_per_subj
-            [days_all_u,ia,ic] = unique(days_all);
+            [days_all_u,ia,ic] = unique(ceil(days_all));
             data_all_u = ones(size(days_all_u)).*NaN;
             data_sd_u = ones(size(days_all_u)).*NaN;
             n_u = ones(size(days_all_u)).*NaN;
             
             for uu = 1:length(days_all_u)
-                data_all_u(uu) = median(data_all(ic == uu));
-                data_sd_u(uu) = iqr(data_all(ic == uu));
+                data_all_u(uu) = mean(data_all(ic == uu));
+                data_sd_u(uu) = std(data_all(ic == uu))./sqrt(length(data_all(ic == uu)));
                 n_u(uu) = length(find(ic == uu));
             end
             
-            if 0%fit_
+            if fit_
+                if 0
 				mdl = fitlm(days_all_u, data_all_u);
                 [p,F] = coefTest(mdl);
                 [h1,p2,ci,stats] = ttest(slopes);
@@ -262,20 +263,39 @@ for tt = 1:numel(types)
 					   
                 %text(days_all_u(end-15), max(data_all)*1.2,... 
                  %      ['rmse: ', num2str(gof.rmse)]);
+                else
+                    ind = 1:6;
+                    [y_out, mean_y, sign_y, peak_y, min_y] = process_y_bigauss(data_all_u(ind));
+                    ft = @(a, b, c1, c2, x) bigauss(a, b, c1, c2, x);
+                     [f, gof] = fit(days_all_u(ind), y_out, ft,...
+                            'StartPoint', [peak_y-min_y, 1.5, 1, 1 ],...
+                            'Upper', [Inf, 4, 5, 5],...
+                            'Lower', [0, 0, 0.5, 0.5],...
+                            'Weights', data_sd_u(ind));   
+                        days_f = days_all_u(1):0.1:days_all_u(end);
+                        y = feval(f, days_f);
+                        y = ((y+min_y).*sign_y)+mean_y;
+                        plot(days_f, y', 'Color', 'r', 'LineStyle', '--');
+                        hold on
+                        errorbar(days_all_u, data_all_u, data_sd_u, 'Vertical', '-',...
+                            'MarkerSize',5, 'Color', 'k', 'MarkerFaceColor', 'k')
 
+                end
             else
-                scatter(days_all, data_all, 20, 'k', 'filled')
+%                 scatter(days_all_u, data_all_u, 20, 'k', 'filled')
+                errorbar(days_all_u, data_all_u, data_sd_u, 'Vertical', '-',...
+                        'MarkerSize',5, 'Color',colors(ss, :), 'MarkerFaceColor',colors(ss, :))
             end
                         
              if ~ind_sub_plot
-%             xticks = [-5 0 10 30 60 100 200];
-            xticks_l = (linspace(days_all_u(1), days_all_u(end), 10));
-            xticks = round(2.^(xticks_l)-d_l);
-            set(gca, 'XTick', xticks_l);
-            set(gca', 'XTickLabel', num2str(xticks'));
-            xlabel('Scanning days')
-            ylabel('Mean diffusivity')
-            grid on
+    %             xticks = [-5 0 10 30 60 100 200];
+                xticks_l = (linspace(days_all_u(1), days_all_u(end), 9));
+                xticks = round(2.^(xticks_l)-d_l);
+                set(gca, 'XTick', xticks_l);
+                set(gca', 'XTickLabel', num2str(xticks'));
+                xlabel('Scanning days')
+                ylabel('Mean diffusivity')
+                grid on
              end
         end
         

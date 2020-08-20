@@ -4,8 +4,11 @@ function [y_out, mean_y, sign_y, peak_y, min_y] = process_y_bigauss(y)
 
 mean_y = mean(y);
 
-neg_mean = abs(mean(y (y < mean_y)-mean_y));
-pos_mean = abs(mean(y (y > mean_y)-mean_y));
+n = 3;
+y_ = y(1:n);
+mean_y_ = mean_y;
+neg_mean = abs(mean(y_ (y_ < mean_y_)-mean_y_));
+pos_mean = abs(mean(y_ (y_ > mean_y_)-mean_y_));
 
 if neg_mean > pos_mean
     sign_y = -1;
